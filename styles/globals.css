@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .iconHeader {
+        @apply hidden lg:flex h-7 w-7 p-1 rounded-full bg-gray-100 text-gray-500 items-center justify-center cursor-pointer
+    }
+}
