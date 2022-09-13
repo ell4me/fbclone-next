@@ -30,3 +30,30 @@ export const storyCards = atom({
         },
     ]
 })
+
+
+export const contacts = atom({
+    key: 'contacts',
+    default: [
+        {
+            name: 'Jeff Bezoz',
+            src: 'https://links.papareact.com/f0p'
+        },
+        {
+            name: 'Elon Musk',
+            src: 'https://links.papareact.com/kxk'
+        },
+        {
+            name: 'James Bond',
+            src: 'https://links.papareact.com/r57'
+        },
+        {
+            name: 'Mark Zuck',
+            src: 'https://links.papareact.com/snf'
+        },
+        {
+            name: 'Bill Gates',
+            src: 'https://links.papareact.com/zvy'
+        },
+    ]
+})

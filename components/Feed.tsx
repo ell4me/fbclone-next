@@ -1,6 +1,6 @@
 import {useRecoilValue} from "recoil";
 import {storyCards} from "../atom";
-import {FormEvent, useCallback, useMemo, useRef, useState} from "react";
+import {FormEvent, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {StoryCard} from "./StoryCard";
 import {useSession} from "next-auth/react";
 import Image from 'next/image'
@@ -8,17 +8,20 @@ import {SidebarItemMenu} from "./SidebarItemMenu";
 import {FaceSmileIcon, PhotoIcon, VideoCameraIcon} from "@heroicons/react/24/solid";
 import {getDownloadURL, ref, uploadString} from "@firebase/storage";
 import {db, storage} from "../firebase";
-import {addDoc, collection, doc, serverTimestamp, updateDoc} from "@firebase/firestore";
+import {addDoc, collection, doc, orderBy, query, serverTimestamp, updateDoc} from "@firebase/firestore";
 import {useCollection} from "react-firebase-hooks/firestore";
 import {Post} from "../types";
+import {PostItem} from "./PostItem";
+import {toast, ToastContainer} from "react-toastify";
 
-export const Feed = () => {
+export const Feed = ({posts}: {posts: Post[]}) => {
     const cards = useRecoilValue(storyCards)
     const [text, setText] = useState('')
     const refFile = useRef<HTMLInputElement>(null)
     const {data} = useSession()
     const [image, setImage] = useState('')
-    const [realtimePosts, loading, error] = useCollection(collection(db, 'posts'));
+    const [postsCount, setPostsCount] = useState(posts ? posts.length : 0)
+    const [realtimePosts, loading, error] = useCollection(query(collection(db, 'posts'), orderBy('timestamp', 'desc')));
 
     const cardItems = useMemo(() => {
         return cards.map(item => {
@@ -28,7 +31,7 @@ export const Feed = () => {
 
     const onSubmit = useCallback(async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        if(text) {
+        if (text) {
             setImage('')
             setText('')
             try {
@@ -38,7 +41,7 @@ export const Feed = () => {
                     text,
                     timestamp: serverTimestamp()
                 })
-                if(image) {
+                if (image) {
                     const snapshot = await uploadString(ref(storage, `posts/${docRef.id}`), image, 'data_url')
                     const url = await getDownloadURL(ref(storage, snapshot.ref.fullPath))
                     await updateDoc(doc(db, 'posts', docRef.id), {
@@ -51,19 +54,41 @@ export const Feed = () => {
         }
     }, [text, image, data])
 
+    useEffect(() => {
+        if(realtimePosts && postsCount < realtimePosts.docs.length) {
+            setPostsCount(c => c + 1)
+            toast("New Post added!");
+        }
+    }, [postsCount, realtimePosts])
+
     const postItems = useMemo(() => {
-        return realtimePosts?.docs.map((item) => {
-            const post = {
-                id: item.id,
-                ...item.data(),
-                timestamp: item.data().timestamp.toDate()
-            } as Post
-            console.log(post)
-        })
-    },[realtimePosts])
+        if(realtimePosts) {
+            return realtimePosts?.docs.map((item) => {
+                const post = {
+                    id: item.id,
+                    ...item.data(),
+                    timestamp: item.data().timestamp ? item.data().timestamp.toDate() : ''
+                } as Post
+                return <PostItem key={post.id} post={post}/>
+            })
+        } else if(posts) {
+            return posts.map(post => <PostItem key={post.id} post={post}/>)
+        }
+    }, [realtimePosts, posts, postsCount, setPostsCount])
 
     return (
-        <main className={'flex-grow pb-64 overflow-y-auto overflow-x-hidden mx-auto max-w-md md:max-w-2xl'}>
+        <main className={'flex-grow pb-44 overflow-y-auto h-screen overflow-x-hidden mx-auto max-w-md md:max-w-2xl scrollbar-hide'}>
+            <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
             <div className={'space-x-4 mb-4 flex mr-4 justify-center'}>
                 {cardItems}
             </div>
@@ -88,7 +113,7 @@ export const Feed = () => {
                         </div>
                     }
                 </div>
-                <div className={'flex space-x-20 items-center justify-center'}>
+                <div className={'flex space-x-5 lg:space-x-20 items-center justify-center'}>
                     <SidebarItemMenu Icon={(props) => <VideoCameraIcon {...props} className={'text-red-500'}/>}
                                      title={'Live/Video'}/>
                     <SidebarItemMenu Icon={(props) => {
@@ -108,8 +133,9 @@ export const Feed = () => {
                     }
                 }}/>
             </div>
-
-
+            <div className={'mr-4 space-y-5 pt-4'}>
+                {postItems}
+            </div>
         </main>
     )
 }

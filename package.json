@@ -9,14 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@headlessui/react": "^1.7.1",
     "@heroicons/react": "^2.0.10",
     "cross-env": "^7.0.3",
     "firebase": "^9.9.4",
+    "moment": "^2.29.4",
     "next": "12.2.5",
     "next-auth": "^4.10.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-firebase-hooks": "^5.0.3",
+    "react-moment": "^1.1.2",
+    "react-toastify": "^9.0.8",
     "recoil": "^0.7.5",
     "tailwind-scrollbar-hide": "^1.1.7"
   },
